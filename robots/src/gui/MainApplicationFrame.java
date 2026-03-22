@@ -3,16 +3,10 @@ package gui;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
-import javax.swing.JDesktopPane;
-import javax.swing.JFrame;
-import javax.swing.JInternalFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 
 import log.Logger;
 
@@ -46,7 +40,13 @@ public class MainApplicationFrame extends JFrame
         addWindow(gameWindow);
 
         setJMenuBar(generateMenuBar());
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                confirmExit();
+            }
+        });
     }
     
     protected LogWindow createLogWindow()
@@ -158,7 +158,7 @@ public class MainApplicationFrame extends JFrame
         {
             JMenuItem exitItem = new JMenuItem("Выход", KeyEvent.VK_Q);
             exitItem.addActionListener((event) -> {
-                System.exit(0);
+                confirmExit();
             });
             exitMenu.add(exitItem);
         }
@@ -177,6 +177,21 @@ public class MainApplicationFrame extends JFrame
             | IllegalAccessException | UnsupportedLookAndFeelException e)
         {
             // just ignore
+        }
+    }
+
+    private void confirmExit() {
+        String[] buttons = new String[]{"Да","Нет"};
+        int ans = JOptionPane.showOptionDialog(null,
+                "Вы уверены, что хотите закрыть проложение?",
+                "Robots",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                buttons,
+                buttons[0]);
+        if (ans == 0) {
+            System.exit(0);
         }
     }
 }
