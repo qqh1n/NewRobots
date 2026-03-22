@@ -101,9 +101,11 @@ public class MainApplicationFrame extends JFrame
         
         JMenu lookAndFeelMenu = generateLookAndFeelMenu();
         JMenu testMenu = generateTestMenu();
+        JMenu exitMenu = generateExitMenu();
 
         menuBar.add(lookAndFeelMenu);
         menuBar.add(testMenu);
+        menuBar.add(exitMenu);
         return menuBar;
     }
 
@@ -147,6 +149,21 @@ public class MainApplicationFrame extends JFrame
             testMenu.add(addLogMessageItem);
         }
         return testMenu;
+    }
+
+    private JMenu generateExitMenu() {
+        JMenu exitMenu = new JMenu("Выход");
+        exitMenu.setMnemonic(KeyEvent.VK_E);
+
+        {
+            JMenuItem exitItem = new JMenuItem("Выход", KeyEvent.VK_Q);
+            exitItem.addActionListener((event) -> {
+                System.exit(0);
+            });
+            exitMenu.add(exitItem);
+        }
+
+        return exitMenu;
     }
     
     private void setLookAndFeel(String className)
