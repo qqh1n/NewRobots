@@ -19,6 +19,7 @@ import log.Logger;
 public class MainApplicationFrame extends JFrame
 {
     private final JDesktopPane desktopPane = new JDesktopPane();
+    private final WindowsStateManager wss = new WindowsStateManager();
     
     public MainApplicationFrame() {
         //Make the big window be indented 50 pixels from each edge
@@ -30,14 +31,28 @@ public class MainApplicationFrame extends JFrame
             screenSize.height - inset*2);
 
         setContentPane(desktopPane);
-        
-        
+
         LogWindow logWindow = createLogWindow();
+        GameWindow gameWindow = new GameWindow();
+
+        wss.register(
+                new RecoverableJInternalFrameWindow(
+                        gameWindow, "GAME_WINDOW"));
+        wss.register(
+                new RecoverableJInternalFrameWindow(
+                        logWindow, "LOG_WINDOW"));
+
+        wss.setDefaultWindowState("GAME_WINDOW",
+                inset, inset, 400,
+                400, false);
+        wss.setDefaultWindowState("LOG_WINDOW",
+                10, 10, 300,
+                800, false);
+
+        addWindow(gameWindow);
         addWindow(logWindow);
 
-        GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(400,  400);
-        addWindow(gameWindow);
+        wss.loadAll();
 
         setJMenuBar(generateMenuBar());
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -52,8 +67,6 @@ public class MainApplicationFrame extends JFrame
     protected LogWindow createLogWindow()
     {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
-        logWindow.setLocation(10,10);
-        logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         Logger.debug("Протокол работает");
         return logWindow;
@@ -190,6 +203,7 @@ public class MainApplicationFrame extends JFrame
                 buttons,
                 buttons[0]);
         if (ans == 0) {
+            wss.saveAll();
             System.exit(0);
         }
     }
