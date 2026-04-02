@@ -66,7 +66,8 @@ public class GameView extends JPanel implements GameModelListener {
 
     private void drawTarget(Graphics2D g, int x, int y)
     {
-        AffineTransform t = AffineTransform.getRotateInstance(0, 0, 0);
+        AffineTransform t = AffineTransform.getRotateInstance(
+                0, 0, 0);
         g.setTransform(t);
         g.setColor(Color.GREEN);
         fillOval(g, x, y, 5, 5);

@@ -93,25 +93,31 @@ public class GameModel {
         return asNormalizedRadians(Math.atan2(diffY, diffX));
     }
 
-    protected void onModelUpdateEvent()
-    {
-        double distance = distance(m_targetPositionX, m_targetPositionY,
+    protected void onModelUpdateEvent() {
+        double dist = distance(m_targetPositionX, m_targetPositionY,
                 m_robotPositionX, m_robotPositionY);
-        if (distance < 0.5)
-        {
+
+        if (dist < 0.5) {
+            m_robotPositionX = m_targetPositionX;
+            m_robotPositionY = m_targetPositionY;
             return;
         }
-        double velocity = maxVelocity;
-        double angleToTarget = angleTo(m_robotPositionX, m_robotPositionY, m_targetPositionX, m_targetPositionY);
-        double angularVelocity = 0;
-        if (angleToTarget > m_robotDirection)
-        {
-            angularVelocity = maxAngularVelocity;
-        }
-        if (angleToTarget < m_robotDirection)
-        {
-            angularVelocity = -maxAngularVelocity;
-        }
+
+        double angleToTarget = angleTo(m_robotPositionX, m_robotPositionY,
+                m_targetPositionX, m_targetPositionY);
+        double angleDiff = angleToTarget - m_robotDirection;
+
+        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+        double angularVelocity = applyLimits(angleDiff * 0.1,
+                -maxAngularVelocity, maxAngularVelocity);
+
+        double safeVelocity = (Math.abs(angularVelocity) > 1e-5)
+                ? Math.abs(angularVelocity) * dist * 0.8
+                : maxVelocity;
+
+        double velocity = Math.min(maxVelocity, safeVelocity);
 
         moveRobot(velocity, angularVelocity, 10);
     }
