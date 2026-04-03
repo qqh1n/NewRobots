@@ -7,13 +7,20 @@ import javax.swing.JPanel;
 
 public class GameWindow extends JInternalFrame
 {
-    private final GameVisualizer m_visualizer;
     public GameWindow() 
     {
         super("Игровое поле", true, true, true, true);
-        m_visualizer = new GameVisualizer();
+
+        GameModel m_gameModel = new GameModel();
+        GameView m_gameView = new GameView(m_gameModel);
+        BotCoordinatesVisualizer m_BCV = new BotCoordinatesVisualizer(m_gameModel);
+
+        m_gameModel.addListener(m_gameView);
+        m_gameModel.addListener(m_BCV);
+
         JPanel panel = new JPanel(new BorderLayout());
-        panel.add(m_visualizer, BorderLayout.CENTER);
+        panel.add(m_gameView, BorderLayout.CENTER);
+        panel.add(m_BCV, BorderLayout.SOUTH);
         getContentPane().add(panel);
         pack();
     }

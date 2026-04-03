@@ -1,0 +1,175 @@
+package gui;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class GameModel {
+    private final Timer m_timer = initTimer();
+
+    private static Timer initTimer() {
+        Timer timer = new Timer("events generator", true);
+        return timer;
+    }
+
+
+    private volatile double m_robotPositionX = 100;
+    private volatile double m_robotPositionY = 100;
+    private volatile double m_robotDirection = 0;
+
+    private volatile int m_targetPositionX = 150;
+    private volatile int m_targetPositionY = 100;
+
+    private static final double maxVelocity = 0.1;
+    private static final double maxAngularVelocity = 0.001;
+
+    private List<GameModelListener> listeners = new ArrayList<>();
+
+    public GameModel() {
+        m_timer.schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                for (GameModelListener listener : listeners) {
+                    listener.onRedrawEvent();
+                }
+            }
+        }, 0, 20);
+        m_timer.schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                onModelUpdateEvent();
+            }
+        }, 0, 10);
+    }
+
+    public int getRoundedRobotPositionX() {
+        return round(m_robotPositionX);
+    }
+
+    public int getRoundedRobotPositionY() {
+        return round(m_robotPositionY);
+    }
+
+    public int getRoundedTargetPositionX() {
+        return round(m_targetPositionX);
+    }
+
+    public int getRoundedTargetPositionY() {
+        return round(m_targetPositionY);
+    }
+
+    public double getRobotDirection() {
+        return m_robotDirection;
+    }
+
+    public void addListener(GameModelListener listener) {
+        listeners.add(listener);
+    }
+
+    protected void setTargetPosition(Point p)
+    {
+        m_targetPositionX = p.x;
+        m_targetPositionY = p.y;
+    }
+
+    private static double distance(double x1, double y1, double x2, double y2)
+    {
+        double diffX = x1 - x2;
+        double diffY = y1 - y2;
+        return Math.sqrt(diffX * diffX + diffY * diffY);
+    }
+
+    private static double angleTo(double fromX, double fromY, double toX, double toY)
+    {
+        double diffX = toX - fromX;
+        double diffY = toY - fromY;
+
+        return asNormalizedRadians(Math.atan2(diffY, diffX));
+    }
+
+    protected void onModelUpdateEvent() {
+        double dist = distance(m_targetPositionX, m_targetPositionY,
+                m_robotPositionX, m_robotPositionY);
+
+        if (dist < 0.5) {
+            m_robotPositionX = m_targetPositionX;
+            m_robotPositionY = m_targetPositionY;
+            return;
+        }
+
+        double angleToTarget = angleTo(m_robotPositionX, m_robotPositionY,
+                m_targetPositionX, m_targetPositionY);
+        double angleDiff = angleToTarget - m_robotDirection;
+
+        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+        double angularVelocity = applyLimits(angleDiff * 0.1,
+                -maxAngularVelocity, maxAngularVelocity);
+
+        double safeVelocity = (Math.abs(angularVelocity) > 1e-5)
+                ? Math.abs(angularVelocity) * dist * 0.8
+                : maxVelocity;
+
+        double velocity = Math.min(maxVelocity, safeVelocity);
+
+        moveRobot(velocity, angularVelocity, 10);
+    }
+
+    private static double applyLimits(double value, double min, double max)
+    {
+        if (value < min)
+            return min;
+        if (value > max)
+            return max;
+        return value;
+    }
+
+    private void moveRobot(double velocity, double angularVelocity, double duration)
+    {
+        velocity = applyLimits(velocity, 0, maxVelocity);
+        angularVelocity = applyLimits(angularVelocity, -maxAngularVelocity, maxAngularVelocity);
+        double newX = m_robotPositionX + velocity / angularVelocity *
+                (Math.sin(m_robotDirection  + angularVelocity * duration) -
+                        Math.sin(m_robotDirection));
+        if (!Double.isFinite(newX))
+        {
+            newX = m_robotPositionX + velocity * duration * Math.cos(m_robotDirection);
+        }
+        double newY = m_robotPositionY - velocity / angularVelocity *
+                (Math.cos(m_robotDirection  + angularVelocity * duration) -
+                        Math.cos(m_robotDirection));
+        if (!Double.isFinite(newY))
+        {
+            newY = m_robotPositionY + velocity * duration * Math.sin(m_robotDirection);
+        }
+        m_robotPositionX = newX;
+        m_robotPositionY = newY;
+        double newDirection = asNormalizedRadians(m_robotDirection + angularVelocity * duration);
+        m_robotDirection = newDirection;
+    }
+
+    private static double asNormalizedRadians(double angle)
+    {
+        while (angle < 0)
+        {
+            angle += 2*Math.PI;
+        }
+        while (angle >= 2*Math.PI)
+        {
+            angle -= 2*Math.PI;
+        }
+        return angle;
+    }
+
+    private static int round(double value)
+    {
+        return (int)(value + 0.5);
+    }
+}
